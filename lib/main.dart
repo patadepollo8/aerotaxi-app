@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
@@ -201,6 +202,12 @@ final promos = <Promo>[
   Promo('VOLA10', 0.1, '10% OFF en tu vuelo'),
   Promo('LLUVIA15', 0.15, '15% OFF en días de lluvia'),
   Promo('TURISMO25', 0.25, '25% OFF en circuitos turísticos'),
+  Promo('NOCHE15', 0.15, '15% OFF en vuelos panorámicos nocturnos'),
+  Promo('PAREJA20', 0.2, '20% OFF en escapadas en pareja'),
+  Promo('FAMILIA20', 0.2, '20% OFF en viajes en familia'),
+  Promo('PANORAMA15', 0.15, '15% OFF en el tour panorámico'),
+  Promo('CENA10', 0.1, '10% OFF en cena en Puerto Madero'),
+  Promo('TOUR20', 0.2, '20% OFF en la Reserva Ecológica'),
 ];
 
 class Alerta {
@@ -1294,6 +1301,429 @@ class BannersTurismo extends StatelessWidget {
   }
 }
 
+class Oferta {
+  final String t, s, img, cod, tag, dest;
+  final Serv sv;
+  final IconData ic;
+  final List<Color> g;
+  Oferta(this.t, this.s, this.img, this.cod, this.tag, this.dest, this.sv, this.ic, this.g);
+}
+
+final heros = <Oferta>[
+  Oferta('Buenos Aires iluminada desde el aire', 'Vuelo panorámico nocturno a Puerto Madero', 'assets/images/hero_noche.jpg',
+      'NOCHE15', '15% OFF · Noche', 'Terminal Madero', Serv.premium, Icons.nights_stay, [Color(0xFF1A237E), Color(0xFF311B92)]),
+  Oferta('Tu primer vuelo, 20% OFF', 'Salí directo a Aeroparque sin tráfico', 'assets/images/hero_primer.jpg',
+      'AERO20', 'Nuevos usuarios', 'Terminal Aeroparque', Serv.estandar, Icons.flight_takeoff, [Color(0xFF06C167), Color(0xFF027A3E)]),
+  Oferta('Circuito turístico con 25% OFF', 'San Telmo, La Boca y Costanera desde el cielo', 'assets/images/hero_turismo.jpg',
+      'TURISMO25', 'Turistas', 'Terminal San Telmo', Serv.estandar, Icons.photo_camera, [Color(0xFFE65100), Color(0xFFBF360C)]),
+];
+
+final relampago = <Oferta>[
+  Oferta('Escapada en pareja', 'Atardecer en Recoleta', 'assets/images/oferta_pareja.jpg',
+      'PAREJA20', '20% OFF', 'Terminal Recoleta', Serv.premium, Icons.favorite, [Color(0xFFAD1457), Color(0xFF880E4F)]),
+  Oferta('Viaje en familia', 'Bosques de Palermo', 'assets/images/oferta_familia.jpg',
+      'FAMILIA20', '20% OFF', 'Terminal Palermo', Serv.estandar, Icons.family_restroom, [Color(0xFF00897B), Color(0xFF004D40)]),
+  Oferta('Compartí y ahorrá', 'Retiro y Plaza San Martín', 'assets/images/oferta_compartido.jpg',
+      'VOLA10', '10% + 30% OFF', 'Terminal Retiro', Serv.compartido, Icons.people, [Color(0xFF1A73E8), Color(0xFF0B3D91)]),
+];
+
+final experiencias = <Oferta>[
+  Oferta('Tour panorámico de Buenos Aires', 'Obelisco, Costanera y Río de la Plata en minutos', 'assets/images/exp_panoramico.jpg',
+      'PANORAMA15', 'Más vendido', 'Terminal Aeroparque', Serv.premium, Icons.landscape, [Color(0xFF0277BD), Color(0xFF01579B)]),
+  Oferta('Cena en Puerto Madero', 'Traslado aéreo al barrio gourmet', 'assets/images/exp_cena.jpg',
+      'CENA10', 'Noche especial', 'Terminal Madero', Serv.estandar, Icons.restaurant, [Color(0xFF6A1B9A), Color(0xFF4A148C)]),
+  Oferta('Atardecer en la Reserva Ecológica', 'Naturaleza y río a pocos minutos del centro', 'assets/images/exp_reserva.jpg',
+      'TOUR20', '20% OFF', 'Terminal Costanera Sur', Serv.compartido, Icons.park, [Color(0xFF2E7D32), Color(0xFF1B5E20)]),
+];
+
+Promo? pOf(Oferta o) {
+  for (final p in promos) {
+    if (p.cod == o.cod && promoMsg(p) == null) return p;
+  }
+  return null;
+}
+
+int precio(Oferta o, Promo? p) =>
+    sim.cotizar(term('Terminal Centro'), term(o.dest), datos.flota.first, o.sv, p).total.round();
+
+void reservar(BuildContext c, Oferta o) {
+  Promo? p;
+  for (final x in promos) {
+    if (x.cod == o.cod) p = x;
+  }
+  final m = p == null ? null : promoMsg(p);
+  if (p != null && m == null) {
+    datos.setPromo(p);
+    snack(c, 'Promo ${p.cod} aplicada · elegí tu aeronave');
+  } else if (m != null) {
+    snack(c, m);
+  }
+  pedido.value = Pedido(term(o.dest), o.sv);
+}
+
+Widget fondo(Oferta o) => Image.asset(
+      o.img,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (x, e, s) => Container(
+        decoration: BoxDecoration(gradient: LinearGradient(colors: o.g, begin: Alignment.topLeft, end: Alignment.bottomRight)),
+        child: Center(child: Icon(o.ic, size: 48, color: Colors.white38)),
+      ),
+    );
+
+Widget sombra([double a = 0.8]) => DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.transparent, Colors.black.withAlpha((a * 255).round())],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+    );
+
+Widget etiqueta(String t, [Color? c]) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: c ?? verde, borderRadius: BorderRadius.circular(8)),
+      child: Text(t, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+
+Widget titulo(String t, [String? s]) => Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 8),
+      child: Row(
+        children: [
+          Expanded(child: Text(t, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+          if (s != null) etiqueta(s, const Color(0xFFD32F2F)),
+        ],
+      ),
+    );
+
+Widget precios(Oferta o, {Color col = Colors.white}) {
+  final p = pOf(o);
+  final fin = precio(o, p);
+  final ini = precio(o, null);
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Text('Desde ${money(fin)}', style: TextStyle(color: col, fontSize: 14, fontWeight: FontWeight.bold)),
+      if (p != null) ...[
+        const SizedBox(width: 6),
+        Text(money(ini),
+            style: TextStyle(color: col.withAlpha(153), fontSize: 11, decoration: TextDecoration.lineThrough)),
+      ],
+    ],
+  );
+}
+
+class Heros extends StatefulWidget {
+  const Heros({super.key});
+  @override
+  State<Heros> createState() => _HerosState();
+}
+
+class _HerosState extends State<Heros> {
+  final pc = PageController(viewportFraction: 0.94);
+  int cur = 0;
+  Timer? tm;
+
+  @override
+  void initState() {
+    super.initState();
+    tm = Timer.periodic(const Duration(seconds: 6), (_) {
+      if (pc.hasClients) {
+        pc.animateToPage((cur + 1) % heros.length, duration: const Duration(milliseconds: 450), curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    tm?.cancel();
+    pc.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext c) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 200,
+          child: PageView.builder(
+            controller: pc,
+            itemCount: heros.length,
+            onPageChanged: (i) => setState(() => cur = i),
+            itemBuilder: (c, i) {
+              final o = heros[i];
+              return GestureDetector(
+                onTap: () => reservar(c, o),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black26)],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        fondo(o),
+                        sombra(0.85),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              etiqueta(o.tag),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(o.t, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 2),
+                                        Text(o.s, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                        const SizedBox(height: 6),
+                                        precios(o),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FilledButton(
+                                    onPressed: () => reservar(c, o),
+                                    style: FilledButton.styleFrom(backgroundColor: verde, foregroundColor: Colors.white),
+                                    child: const Text('Reservar'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < heros.length; i++)
+              Container(
+                width: i == cur ? 16 : 6,
+                height: 6,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: i == cur ? Theme.of(c).colorScheme.primary : Colors.grey,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class Relampago extends StatelessWidget {
+  const Relampago({super.key});
+
+  @override
+  Widget build(BuildContext c) {
+    final q = 24 - DateTime.now().hour;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        titulo('Ofertas relámpago', 'Quedan ${q}h'),
+        SizedBox(
+          height: 210,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: relampago.length,
+            itemBuilder: (c, i) {
+              final o = relampago[i];
+              return GestureDetector(
+                onTap: () => reservar(c, o),
+                child: Container(
+                  width: 190,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(color: gris(c), borderRadius: BorderRadius.circular(16)),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: 105,
+                          width: double.infinity,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              fondo(o),
+                              Positioned(top: 8, left: 8, child: etiqueta(o.tag)),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(o.t, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              Text(o.s, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                              const SizedBox(height: 6),
+                              precios(o, col: Theme.of(c).colorScheme.primary),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class Experiencias extends StatelessWidget {
+  const Experiencias({super.key});
+
+  @override
+  Widget build(BuildContext c) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        titulo('Experiencias para turistas'),
+        for (final o in experiencias)
+          GestureDetector(
+            onTap: () => reservar(c, o),
+            child: Container(
+              height: 160,
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    fondo(o),
+                    sombra(0.85),
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          etiqueta(o.tag, o.tag == 'Más vendido' ? const Color(0xFFF9A825) : null),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(o.t, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                                    Text(o.s, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                    const SizedBox(height: 4),
+                                    precios(o),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              FilledButton(
+                                onPressed: () => reservar(c, o),
+                                style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+                                child: const Text('Reservar'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+Widget bannerClub(BuildContext c) => GestureDetector(
+      onTap: () => navTab.value = 4,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(colors: [Color(0xFF8E24AA), Color(0xFF4A148C)]),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  etiqueta('AeroPuntos', Colors.amber[800]),
+                  const SizedBox(height: 6),
+                  const Text('Cada vuelo suma, cada nivel premia',
+                      style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text('Tenés ${datos.puntos} pts · nivel ${datos.nivel}. Los fines de semana x2',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.emoji_events, color: Colors.amber, size: 48),
+          ],
+        ),
+      ),
+    );
+
+Widget bannerRef(BuildContext c) {
+  final cod = 'AERO-${datos.pas.nombre.toUpperCase()}200';
+  return GestureDetector(
+    onTap: () {
+      Clipboard.setData(ClipboardData(text: cod));
+      snack(c, 'Código $cod copiado · compartilo con tus amigos');
+    },
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(colors: [Color(0xFF06C167), Color(0xFF027A3E)]),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Invitá a un amigo y ganá 200 pts',
+                    style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
+                Text('Tu código: $cod · tocá para copiar', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
+          ),
+          const Icon(Icons.card_giftcard, color: Colors.white70, size: 44),
+        ],
+      ),
+    ),
+  );
+}
+
 class Buscador extends StatefulWidget {
   final Terminal? ex;
   final String tit;
@@ -1713,9 +2143,19 @@ class _ViajarState extends State<Viajar> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  const Heros(),
+                  const SizedBox(height: 12),
+                  const Relampago(),
+                  const SizedBox(height: 8),
                   Banners(banners(ctx)),
                   const SizedBox(height: 16),
+                  const Experiencias(),
                   const BannersTurismo(),
+                  const SizedBox(height: 16),
+                  bannerClub(ctx),
+                  const SizedBox(height: 12),
+                  bannerRef(ctx),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
