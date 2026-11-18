@@ -203,8 +203,6 @@ final promos = <Promo>[
   Promo('LLUVIA15', 0.15, '15% OFF en días de lluvia'),
   Promo('TURISMO25', 0.25, '25% OFF en circuitos turísticos'),
   Promo('NOCHE15', 0.15, '15% OFF en vuelos panorámicos nocturnos'),
-  Promo('PAREJA20', 0.2, '20% OFF en escapadas en pareja'),
-  Promo('FAMILIA20', 0.2, '20% OFF en viajes en familia'),
   Promo('PANORAMA15', 0.15, '15% OFF en el tour panorámico'),
   Promo('CENA10', 0.1, '10% OFF en cena en Puerto Madero'),
   Promo('TOUR20', 0.2, '20% OFF en la Reserva Ecológica'),
@@ -1318,15 +1316,6 @@ final heros = <Oferta>[
       'TURISMO25', 'Turistas', 'Terminal San Telmo', Serv.estandar, Icons.photo_camera, [Color(0xFFE65100), Color(0xFFBF360C)]),
 ];
 
-final relampago = <Oferta>[
-  Oferta('Escapada en pareja', 'Atardecer en Recoleta', 'assets/images/oferta_pareja.jpg',
-      'PAREJA20', '20% OFF', 'Terminal Recoleta', Serv.premium, Icons.favorite, [Color(0xFFAD1457), Color(0xFF880E4F)]),
-  Oferta('Viaje en familia', 'Bosques de Palermo', 'assets/images/oferta_familia.jpg',
-      'FAMILIA20', '20% OFF', 'Terminal Palermo', Serv.estandar, Icons.family_restroom, [Color(0xFF00897B), Color(0xFF004D40)]),
-  Oferta('Compartí y ahorrá', 'Retiro y Plaza San Martín', 'assets/images/oferta_compartido.jpg',
-      'VOLA10', '10% + 30% OFF', 'Terminal Retiro', Serv.compartido, Icons.people, [Color(0xFF1A73E8), Color(0xFF0B3D91)]),
-];
-
 final experiencias = <Oferta>[
   Oferta('Tour panorámico de Buenos Aires', 'Obelisco, Costanera y Río de la Plata en minutos', 'assets/images/exp_panoramico.jpg',
       'PANORAMA15', 'Más vendido', 'Terminal Aeroparque', Serv.premium, Icons.landscape, [Color(0xFF0277BD), Color(0xFF01579B)]),
@@ -1527,70 +1516,6 @@ class _HerosState extends State<Heros> {
                 ),
               ),
           ],
-        ),
-      ],
-    );
-  }
-}
-
-class Relampago extends StatelessWidget {
-  const Relampago({super.key});
-
-  @override
-  Widget build(BuildContext c) {
-    final q = 24 - DateTime.now().hour;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        titulo('Ofertas relámpago', 'Quedan ${q}h'),
-        SizedBox(
-          height: 210,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: relampago.length,
-            itemBuilder: (c, i) {
-              final o = relampago[i];
-              return GestureDetector(
-                onTap: () => reservar(c, o),
-                child: Container(
-                  width: 190,
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(color: gris(c), borderRadius: BorderRadius.circular(16)),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          height: 105,
-                          width: double.infinity,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              fondo(o),
-                              Positioned(top: 8, left: 8, child: etiqueta(o.tag)),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(o.t, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                              Text(o.s, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
-                              const SizedBox(height: 6),
-                              precios(o, col: Theme.of(c).colorScheme.primary),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -2145,11 +2070,10 @@ class _ViajarState extends State<Viajar> with TickerProviderStateMixin {
                   const SizedBox(height: 16),
                   const Heros(),
                   const SizedBox(height: 12),
-                  const Relampago(),
+                  const Experiencias(),
                   const SizedBox(height: 8),
                   Banners(banners(ctx)),
                   const SizedBox(height: 16),
-                  const Experiencias(),
                   const BannersTurismo(),
                   const SizedBox(height: 16),
                   bannerClub(ctx),
