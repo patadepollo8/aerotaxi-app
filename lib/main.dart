@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
@@ -1586,69 +1585,6 @@ class Experiencias extends StatelessWidget {
   }
 }
 
-Widget bannerClub(BuildContext c) => GestureDetector(
-      onTap: () => navTab.value = 4,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: const LinearGradient(colors: [Color(0xFF8E24AA), Color(0xFF4A148C)]),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  etiqueta('AeroPuntos', Colors.amber[800]),
-                  const SizedBox(height: 6),
-                  const Text('Cada vuelo suma, cada nivel premia',
-                      style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 2),
-                  Text('Tenés ${datos.puntos} pts · nivel ${datos.nivel}. Los fines de semana x2',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                ],
-              ),
-            ),
-            const Icon(Icons.emoji_events, color: Colors.amber, size: 48),
-          ],
-        ),
-      ),
-    );
-
-Widget bannerRef(BuildContext c) {
-  final cod = 'AERO-${datos.pas.nombre.toUpperCase()}200';
-  return GestureDetector(
-    onTap: () {
-      Clipboard.setData(ClipboardData(text: cod));
-      snack(c, 'Código $cod copiado · compartilo con tus amigos');
-    },
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(colors: [Color(0xFF06C167), Color(0xFF027A3E)]),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Invitá a un amigo y ganá 200 pts',
-                    style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 2),
-                Text('Tu código: $cod · tocá para copiar', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-              ],
-            ),
-          ),
-          const Icon(Icons.card_giftcard, color: Colors.white70, size: 44),
-        ],
-      ),
-    ),
-  );
-}
-
 class Buscador extends StatefulWidget {
   final Terminal? ex;
   final String tit;
@@ -2071,14 +2007,8 @@ class _ViajarState extends State<Viajar> with TickerProviderStateMixin {
                   const Heros(),
                   const SizedBox(height: 12),
                   const Experiencias(),
-                  const SizedBox(height: 8),
-                  Banners(banners(ctx)),
                   const SizedBox(height: 16),
                   const BannersTurismo(),
-                  const SizedBox(height: 16),
-                  bannerClub(ctx),
-                  const SizedBox(height: 12),
-                  bannerRef(ctx),
                   const SizedBox(height: 16),
                 ],
               ),
